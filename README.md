@@ -6,7 +6,7 @@ Pip offline installation tool.
 
 - [x] Two servers, one can be networked called A, one **can not** be networked called B.
 - [x] A server with the same `architecture` and the same `distribution` as the B server, and with a good network.
-- [x] Same python version and `pip` is also installed.
+- [x] Same python version and `pip` is installed.
 - [x] Both servers must have sufficient hard disk space.
 
 ## Usage
