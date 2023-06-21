@@ -8,21 +8,36 @@ use crate::DEFAULT_CONFIG_NAME;
 use crate::DEFAULT_PACKAGE_SUFFIX;
 use crate::DEFAULT_SHA256_SUFFIX;
 
-fn download_depends(package_name: &str, target_dir: &str) -> Vec<String> {
+fn download_depends(package_name: &str, package_version: &str, target_dir: &str) -> Vec<String> {
     // package_name: python-telegram-bot~=20.3
 
     let mut download_whl = Vec::new();
-    let _ = match Command::new("pip")
-        .arg("download")
-        .arg(package_name)
-        .output()
-    {
-        Ok(_) => (),
-        Err(e) => {
-            println!("Please install pip first");
-            panic!("Failed to execute pip download: {}", e);
-        }
-    };
+    if package_version == "null" {
+        let _ = match Command::new("pip")
+            .arg("download")
+            .arg(package_name)
+            .output()
+        {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Please install pip first");
+                panic!("Failed to execute pip download: {}", e);
+            }
+        };
+    } else {
+        let package_name_with_version = format!("{}=={}", package_name, package_version);
+        let _ = match Command::new("pip")
+            .arg("download")
+            .arg(package_name_with_version)
+            .output()
+        {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Please install pip first");
+                panic!("Failed to execute pip download: {}", e);
+            }
+        };
+    }
 
     for entry in glob("*.whl").expect("Failed to read glob pattern") {
         match entry {
@@ -38,10 +53,20 @@ fn download_depends(package_name: &str, target_dir: &str) -> Vec<String> {
     download_whl
 }
 
-pub fn pack_deb(package_name: &str) {
+fn package_name_check(package_name: &str) {
+    if package_name.contains("~=")
+        || package_name.contains(">")
+        || package_name.contains("<")
+        || package_name.contains("=")
+    {
+        panic!("Please use --version to specify the version of the pip package");
+    }
+}
+
+pub fn pack_deb(package_name: &str, package_version: &str) {
+    package_name_check(package_name);
     // let target_dir = format!("./{}", package_name);
-    let target_dir = package_name;
-    match utils::create_dir(&target_dir) {
+    match utils::create_dir(package_name) {
         true => println!("Create tmp dir success"),
         false => {
             println!("Create tmp dir failed");
@@ -50,7 +75,7 @@ pub fn pack_deb(package_name: &str) {
     }
 
     println!("Downloading...");
-    let depends_all_vec = download_depends(package_name, &target_dir);
+    let depends_all_vec = download_depends(package_name, package_version, package_name);
     // println!("{}", package_full_name);
 
     // serde config
@@ -58,12 +83,19 @@ pub fn pack_deb(package_name: &str) {
         data: depends_all_vec,
     };
     utils::serde_to_file(DEFAULT_CONFIG_NAME, serde_config);
-    utils::move_file_to_dir(DEFAULT_CONFIG_NAME, &target_dir);
+    utils::move_file_to_dir(DEFAULT_CONFIG_NAME, package_name);
 
     // compress
     println!("Saving...");
-    let dest = format!("{}.{}", package_name, DEFAULT_PACKAGE_SUFFIX);
-    sevenz_rust::compress_to_path(target_dir, &dest).expect("compress ok");
+    let dest = if package_version == "null" {
+        format!("{}.{}", package_name, DEFAULT_PACKAGE_SUFFIX)
+    } else {
+        format!(
+            "{}_{}.{}",
+            package_name, package_version, DEFAULT_PACKAGE_SUFFIX
+        )
+    };
+    sevenz_rust::compress_to_path(package_name, &dest).expect("compress ok");
 
     // sha256 hash
     println!("Hashing...");
@@ -73,6 +105,6 @@ pub fn pack_deb(package_name: &str) {
 
     // clean dir
     println!("Removing tmp dir...");
-    utils::remove_dir(target_dir);
+    utils::remove_dir(package_name);
     println!("Done");
 }

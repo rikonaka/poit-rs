@@ -21,6 +21,10 @@ struct Args {
     /// Install the packaged pip dependencies
     #[arg(short, long, default_value = "null")]
     install: String,
+
+    /// Specify the version of the pip package
+    #[arg(short, long, default_value = "null")]
+    version: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -48,7 +52,7 @@ mod tests {
 fn main() {
     let args = Args::parse();
     if args.pack != "null" {
-        pack::pack_deb(&args.pack);
+        pack::pack_deb(&args.pack, &args.version);
     } else if args.install != "null" {
         install::install_wheel(&args.install);
     } else {
