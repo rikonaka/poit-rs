@@ -6,7 +6,7 @@ use crate::utils;
 use crate::DEFAULT_SHA256_SUFFIX;
 
 fn install_depends(package_path: &str, package_name: &str, package_version: &str) {
-    let find_links_str = format!("--find-links=./{}/", package_path);
+    let find_links_str = format!("--find-links=./{}_{}/", package_path, package_version);
     let package = format!("{}=={}", package_name, package_version);
     let _ = Command::new("pip")
         .arg("install")
