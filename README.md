@@ -38,7 +38,7 @@ Done
 Or package a version of the software.
 
 ```bash
-root@debian:~/test# ./poit --pack ipython --version 8.13.2
+root@debian:~/test# ./poit --pack ipython --ver 8.13.2
 Create tmp dir success
 Downloading...
 Saving...

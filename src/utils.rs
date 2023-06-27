@@ -117,3 +117,18 @@ pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> bool {
 //         }
 //     }
 // }
+
+pub fn pip_version() -> Option<String> {
+    let c = Command::new("pip")
+        .arg("--version")
+        .output()
+        .expect("failed to excute pip install");
+    // println!("{}", String::from_utf8_lossy(&c.stdout));
+    let version_str = String::from_utf8_lossy(&c.stdout);
+    let version_split: Vec<&str> = version_str.split(" ").collect();
+    if version_split.len() >= 2 {
+        Some(version_split[2].to_string())
+    } else {
+        None
+    }
+}

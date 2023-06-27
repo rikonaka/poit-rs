@@ -9,34 +9,36 @@ use crate::DEFAULT_PACKAGE_SUFFIX;
 use crate::DEFAULT_SHA256_SUFFIX;
 
 fn download_depends(package_name: &str, package_version: &str, target_dir: &str) -> Vec<String> {
-    // package_name: python-telegram-bot~=20.3
-
+    // package_name: python-telegram-bot
+    // package_version: 20.3
     let mut download_whl = Vec::new();
     if package_version == "null" {
-        let _ = match Command::new("pip")
+        let command = match Command::new("pip")
             .arg("download")
             .arg(package_name)
             .output()
         {
-            Ok(_) => (),
+            Ok(c) => c,
             Err(e) => {
                 println!("Please install pip first");
                 panic!("Failed to execute pip download: {}", e);
             }
         };
+        println!("Downloading: {}", String::from_utf8_lossy(&command.stdout));
     } else {
         let package_name_with_version = format!("{}=={}", package_name, package_version);
-        let _ = match Command::new("pip")
+        let command = match Command::new("pip")
             .arg("download")
             .arg(package_name_with_version)
             .output()
         {
-            Ok(_) => (),
+            Ok(c) => c,
             Err(e) => {
                 println!("Please install pip first");
                 panic!("Failed to execute pip download: {}", e);
             }
         };
+        println!("Downloading: {}", String::from_utf8_lossy(&command.stdout));
     }
 
     for entry in glob("*.whl").expect("Failed to read glob pattern") {

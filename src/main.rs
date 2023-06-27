@@ -1,5 +1,6 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use version_compare::Version;
 
 mod install;
 mod pack;
@@ -24,7 +25,7 @@ struct Args {
 
     /// Specify the version of the pip package
     #[arg(short, long, default_value = "null")]
-    version: String,
+    ver: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -49,12 +50,33 @@ mod tests {
     }
 }
 
+fn pip_version_check() -> (bool, String) {
+    let pip_version = utils::pip_version().unwrap();
+    let recommand_version = Version::from("21.2").unwrap();
+    let current_version = Version::from(&pip_version).unwrap();
+    if current_version > recommand_version {
+        (true, pip_version.to_string())
+    } else {
+        (false, pip_version.to_string())
+    }
+}
+
 fn main() {
+    match pip_version_check() {
+        (true, _) => (),
+        (false, v) => {
+            panic!(
+                "Please update the pip version (>=21.2), current version [{}]",
+                v
+            );
+        }
+    }
+
     let args = Args::parse();
     if args.pack != "null" {
-        pack::pack_deb(&args.pack, &args.version);
+        pack::pack_deb(&args.pack, &args.ver);
     } else if args.install != "null" {
-        install::install_wheel(&args.install, &args.version);
+        install::install_wheel(&args.install, &args.ver);
     } else {
         println!("Use --help for more infomation");
     }
