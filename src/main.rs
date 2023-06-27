@@ -54,7 +54,7 @@ fn main() {
     if args.pack != "null" {
         pack::pack_deb(&args.pack, &args.version);
     } else if args.install != "null" {
-        install::install_wheel(&args.install);
+        install::install_wheel(&args.install, &args.version);
     } else {
         println!("Use --help for more infomation");
     }

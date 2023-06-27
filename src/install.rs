@@ -5,20 +5,21 @@ use crate::utils;
 // use crate::DEFAULT_CONFIG_NAME;
 use crate::DEFAULT_SHA256_SUFFIX;
 
-fn install_depends(package_path: &str, package_name: &str) {
+fn install_depends(package_path: &str, package_name: &str, package_version: &str) {
     let find_links_str = format!("--find-links=./{}/", package_path);
+    let package = format!("{}=={}", package_name, package_version);
     let _ = Command::new("pip")
         .arg("install")
         .arg("--no-index")
         .arg(find_links_str)
-        .arg(package_name)
+        .arg(package)
         .output()
         .expect("failed to excute pip install");
 
     // println!("{}", String::from_utf8_lossy(&c.stdout));
 }
 
-pub fn install_wheel(poitfile_name: &str) {
+pub fn install_wheel(poitfile_name: &str, package_version: &str) {
     // poitfile_name: vim.poit
 
     // sha256 check
@@ -52,7 +53,7 @@ pub fn install_wheel(poitfile_name: &str) {
     // let _ = serde_config.data;
 
     // install all
-    install_depends(&target_dir, &target_dir);
+    install_depends(&target_dir, &target_dir, package_version);
 
     // delete decompress dir
     println!("Removing tmp dir...");
