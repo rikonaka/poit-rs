@@ -40,9 +40,9 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) {
     let contents = utils::read_file_bytes(&hash_filename).unwrap();
     let contents = String::from_utf8_lossy(&contents).to_string();
     if hash_str.trim() != contents.trim() {
-        panic!("Check sha256 failed");
+        panic!("check sha256 failed");
     } else {
-        println!("Check sha256 success");
+        println!("Check sha256 success...");
     }
 
     // get target dir name
@@ -50,7 +50,7 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) {
     let target_dir = if poitfile_name_split.len() >= 2 {
         poitfile_name_split[0].to_string()
     } else {
-        panic!("Filename error, Standard files should end with poit");
+        panic!("filename error, standard files should end with poit");
     };
 
     // decompress 7z package

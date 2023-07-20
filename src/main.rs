@@ -51,7 +51,7 @@ mod tests {
 }
 
 fn pip_version_check() -> (bool, String) {
-    let pip_version = utils::pip_version().unwrap();
+    let pip_version = utils::get_pip_version().unwrap();
     let recommand_version = Version::from("21.2").unwrap();
     let current_version = Version::from(&pip_version).unwrap();
     if current_version > recommand_version {
@@ -66,7 +66,7 @@ fn main() {
         (true, _) => (),
         (false, v) => {
             panic!(
-                "Please update the pip version (>=21.2), current version [{}]",
+                "please update the pip version (>=21.2), current version {}",
                 v
             );
         }
@@ -74,10 +74,10 @@ fn main() {
 
     let args = Args::parse();
     if args.pack != "null" {
-        pack::pack_deb(&args.pack, &args.ver);
+        pack::pack_wheel(&args.pack, &args.ver);
     } else if args.install != "null" {
         install::install_wheel(&args.install, &args.ver);
     } else {
-        println!("Use --help for more infomation");
+        println!("use --help for more infomation");
     }
 }

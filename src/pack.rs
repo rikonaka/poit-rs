@@ -34,14 +34,16 @@ fn download_depends(package_name: &str, package_version: &str, target_dir: &str)
         {
             Ok(c) => c,
             Err(e) => {
-                println!("Please install pip first");
-                panic!("Failed to execute pip download: {}", e);
+                panic!(
+                    "please install pip first, failed to execute pip download: {}",
+                    e
+                );
             }
         };
         println!("Downloading: {}", String::from_utf8_lossy(&command.stdout));
     }
 
-    for entry in glob("*.whl").expect("Failed to read glob pattern") {
+    for entry in glob("*.whl").expect("failed to read glob pattern") {
         match entry {
             Ok(path) => {
                 // println!("{:?}", path.display());
@@ -61,17 +63,17 @@ fn package_name_check(package_name: &str) {
         || package_name.contains("<")
         || package_name.contains("=")
     {
-        panic!("Please use --version to specify the version of the pip package");
+        panic!("please use --version to specify the version of the pip package");
     }
 }
 
-pub fn pack_deb(package_name: &str, package_version: &str) {
+pub fn pack_wheel(package_name: &str, package_version: &str) {
     package_name_check(package_name);
     // let target_dir = format!("./{}", package_name);
     match utils::create_dir(package_name) {
-        true => println!("Create tmp dir success"),
+        true => println!("create tmp dir success"),
         false => {
-            println!("Create tmp dir failed");
+            println!("create tmp dir failed");
             return;
         }
     }

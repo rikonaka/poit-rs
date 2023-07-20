@@ -118,7 +118,7 @@ pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> bool {
 //     }
 // }
 
-pub fn pip_version() -> Option<String> {
+pub fn get_pip_version() -> Option<String> {
     let c = Command::new("pip")
         .arg("--version")
         .output()
