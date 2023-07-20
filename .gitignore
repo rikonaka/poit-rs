@@ -15,3 +15,6 @@ Cargo.lock
 
 # venv for debian 12
 venv/
+# pipenv
+Pipfile
+Pipfile.lock

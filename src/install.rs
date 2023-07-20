@@ -16,10 +16,10 @@ fn test_pip_command() {
     println!("{}", String::from_utf8_lossy(&c.stdout));
 }
 
-fn install_depends(package_path: &str, package_name: &str, package_version: &str) {
-    let find_links_str = format!("--find-links=./{}_{}/", package_path, package_version);
+fn install_depends(package_name: &str, package_version: &str) {
+    let find_links_str = format!("--find-links=./{}_{}/", package_name, package_version);
     let package = format!("{}=={}", package_name, package_version);
-    let _ = Command::new("pip")
+    let c = Command::new("pip")
         .arg("install")
         .arg("--no-index")
         .arg(find_links_str)
@@ -27,7 +27,7 @@ fn install_depends(package_path: &str, package_name: &str, package_version: &str
         .output()
         .expect("failed to excute pip install");
 
-    // println!("{}", String::from_utf8_lossy(&c.stdout));
+    println!("{}", String::from_utf8_lossy(&c.stdout));
 }
 
 pub fn install_wheel(poitfile_name: &str, package_version: &str) {
@@ -46,11 +46,28 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) {
     }
 
     // get target dir name
-    let poitfile_name_split: Vec<&str> = poitfile_name.split(".").collect();
-    let target_dir = if poitfile_name_split.len() >= 2 {
+    let poitfile_name_split: Vec<&str> = poitfile_name.split(".poit").collect();
+    let target_dir = if poitfile_name_split.len() > 0 {
         poitfile_name_split[0].to_string()
     } else {
         panic!("filename error, standard files should end with poit");
+    };
+
+    // get package version
+    let (package_name, package_version) = if package_version == "null" {
+        let poit_split_1: Vec<&str> = poitfile_name.split(".poit").collect();
+        if poit_split_1.len() > 0 {
+            let poit_split_2: Vec<&str> = poit_split_1[0].split("_").collect();
+            if poit_split_2.len() == 2 {
+                (poit_split_2[0], poit_split_2[1])
+            } else {
+                panic!("please check your poit file");
+            }
+        } else {
+            panic!("please check your poit file");
+        }
+    } else {
+        (poitfile_name, package_version)
     };
 
     // decompress 7z package
@@ -64,7 +81,8 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) {
     // let _ = serde_config.data;
 
     // install all
-    install_depends(&target_dir, &target_dir, package_version);
+    // println!("{}, {}", package_name, package_version);
+    install_depends(package_name, package_version);
 
     // delete decompress dir
     println!("Removing tmp dir...");

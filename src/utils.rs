@@ -74,7 +74,7 @@ pub fn create_file(filename: &str) -> Option<File> {
     match File::create(filename) {
         Ok(f) => Some(f),
         Err(e) => {
-            println!("Failed create sha256 file: {}", e);
+            println!("Create sha256 file failed: {}", e);
             None
         }
     }
@@ -93,7 +93,7 @@ pub fn write_to_file(filename: &str, contents: &str) -> bool {
     match file.write_all(contents.as_bytes()) {
         Ok(_) => true,
         Err(e) => {
-            println!("Failed to write config file: {}", e);
+            println!("Write config file failed: {}", e);
             false
         }
     }
@@ -122,12 +122,13 @@ pub fn get_pip_version() -> Option<String> {
     let c = Command::new("pip")
         .arg("--version")
         .output()
-        .expect("failed to excute pip install");
+        .expect("failed to excute pip version");
     // println!("{}", String::from_utf8_lossy(&c.stdout));
     let version_str = String::from_utf8_lossy(&c.stdout);
     let version_split: Vec<&str> = version_str.split(" ").collect();
+    // ["pip", "23.0.1", "from", "/usr/lib/python3/dist-packages/pip",  "(python", "3.11)\n"]
     if version_split.len() >= 2 {
-        Some(version_split[2].to_string())
+        Some(version_split[1].to_string())
     } else {
         None
     }
