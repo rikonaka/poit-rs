@@ -34,13 +34,13 @@ root@debian:~/test# ./poit --pack ipython
 Or package a version of the software.
 
 ```bash
-root@debian:~/test# ./poit --pack ipython --version 8.13.2
+root@debian:~/test# ./poit --pack ipython --package-version 8.26.0
 ```
 
 Or package with specific python version.
 
 ```bash
-root@debian:~/test# ./poit --pack ipython --python 3.12
+root@debian:~/test# ./poit --pack ipython --python-version 3.12
 ```
 
 These three files will appear in the directory.
@@ -65,11 +65,12 @@ Start offline installation.
 
 ```bash
 root@debian:~/test# ./poit --install ipython.poit
-Checking...
-Check sha256 success
-Decompress poit...
-Removing tmp dir...
-Done
+```
+
+Or
+
+```bash
+root@debian:~/test# ./poit --install ipython.poit --package-version 8.26.0
 ```
 
 If this process does not have any error messages, the installation is successful and you can now use the offline installed `ipython`.
