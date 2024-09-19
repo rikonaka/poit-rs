@@ -2,6 +2,8 @@
 
 Pip offline installation tool.
 
+[![Rust](https://github.com/rikonaka/poit-rs/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/rikonaka/poit-rs/actions/workflows/rust.yml)
+
 ## Requirements
 
 - [x] Two servers, one can be networked called A, one **can not** be networked called B.
