@@ -18,3 +18,5 @@ venv/
 # pipenv
 Pipfile
 Pipfile.lock
+
+*.7z
