@@ -2,6 +2,14 @@
 name = "poit"
 version = "0.1.4"
 edition = "2021"
+authors = ["Riko Naka <xxy1836@gmail.com>"]
+license = "GPL-3.0-only"
+description = "Pip offline installation tool."
+readme = "README.md"
+homepage = "https://github.com/rikonaka/poit-rs"
+repository = "https://github.com/rikonaka/poit-rs"
+keywords = ["pip", "wheel", "offline"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
