@@ -1,108 +1,59 @@
-use sha2::{Digest, Sha256};
+use anyhow::Result;
+use sha2::Digest;
+use sha2::Sha256;
 use std::fs;
-use std::fs::{read, File};
-use std::io::{Read, Write};
+use std::fs::read;
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 use std::process::Command;
 
 use crate::SerdeConfig;
 
-pub fn move_file_to_dir(filename: &str, target_dir: &str) {
-    let _ = Command::new("mv")
-        .arg(filename)
-        .arg(target_dir)
-        .output()
-        .expect("failed to execute apt download");
+pub fn move_file_to_dir(target_dir: &str, filename: &str) -> Result<()> {
+    let _ = Command::new("mv").arg(filename).arg(target_dir).output()?;
+    Ok(())
 }
 
-pub fn remove_dir(target_dir: &str) {
-    let _ = Command::new("rm")
-        .arg("-rf")
-        .arg(target_dir)
-        .output()
-        .expect("failed to execute apt download");
+pub fn remove_dir(target_dir: &str) -> Result<()> {
+    let _ = Command::new("rm").arg("-rf").arg(target_dir).output()?;
+    Ok(())
 }
 
-pub fn read_file_bytes(path: &str) -> Option<Vec<u8>> {
-    let mut file = match File::open(path) {
-        Ok(f) => f,
-        Err(e) => {
-            println!("Failed to read poit file: {}", e);
-            return None;
-        }
-    };
+pub fn read_file_bytes(path: &str) -> Result<Vec<u8>> {
+    let mut file = File::open(path)?;
     let mut contents = Vec::new();
-    match file.read_to_end(&mut contents) {
-        Ok(_) => (),
-        Err(e) => {
-            println!("Failed to read poit as bytes: {}", e);
-            return None;
-        }
-    }
-    Some(contents)
+    file.read_to_end(&mut contents)?;
+    Ok(contents)
 }
 
-// pub fn read_file_str(path: &str) -> Option<String> {
-//     let mut file = match File::open(path) {
-//         Ok(f) => f,
-//         Err(e) => {
-//             println!("Failed to read poit file: {}", e);
-//             return None;
-//         }
-//     };
-//     let mut contents = String::new();
-//     match file.read_to_string(&mut contents) {
-//         Ok(_) => (),
-//         Err(e) => {
-//             println!("Failed to read poit as bytes: {}", e);
-//             return None;
-//         }
-//     }
-//     Some(contents)
-// }
-
-pub fn create_dir(dirname: &str) -> bool {
-    match fs::create_dir(dirname) {
-        Ok(_) => true,
-        Err(e) => {
-            println!("Create target dir failed: {}", e);
-            false
-        }
-    }
+pub fn create_dir(dirname: &str) -> Result<()> {
+    fs::create_dir(dirname)?;
+    Ok(())
 }
 
-pub fn create_file(filename: &str) -> Option<File> {
-    match File::create(filename) {
-        Ok(f) => Some(f),
-        Err(e) => {
-            println!("Create sha256 file failed: {}", e);
-            None
-        }
-    }
+pub fn create_file(filename: &str) -> Result<File> {
+    let f = File::create(filename)?;
+    Ok(f)
 }
 
-pub fn file_sha256(filename: &str) -> Option<String> {
-    let contents = read(filename).unwrap();
+pub fn file_sha256(filename: &str) -> Result<String> {
+    let contents = read(filename)?;
     let hash = Sha256::digest(&contents);
-    // println!("{:x}", hash);
     let hash_str = format!("{:x}", hash);
-    Some(hash_str)
+    Ok(hash_str)
 }
 
-pub fn write_to_file(filename: &str, contents: &str) -> bool {
-    let mut file = create_file(filename).unwrap();
-    match file.write_all(contents.as_bytes()) {
-        Ok(_) => true,
-        Err(e) => {
-            println!("Write config file failed: {}", e);
-            false
-        }
-    }
+pub fn write_to_file(filename: &str, contents: &str) -> Result<()> {
+    let mut file = create_file(filename)?;
+    file.write_all(contents.as_bytes())?;
+    Ok(())
 }
 
-pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> bool {
+pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> Result<()> {
     let serialized = match serde_json::to_string(&serde_config) {
         Ok(s) => s,
-        _ => return false,
+        Err(e) => return Err(e.into()),
     };
     write_to_file(filename, &serialized)
 }
@@ -118,18 +69,14 @@ pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> bool {
 //     }
 // }
 
-pub fn get_pip_version() -> Option<String> {
-    let c = Command::new("pip")
-        .arg("--version")
-        .output()
-        .expect("failed to excute pip version");
-    // println!("{}", String::from_utf8_lossy(&c.stdout));
+pub fn get_pip_version() -> Result<Option<String>> {
+    let c = Command::new("pip").arg("--version").output()?;
     let version_str = String::from_utf8_lossy(&c.stdout);
     let version_split: Vec<&str> = version_str.split(" ").collect();
     // ["pip", "23.0.1", "from", "/usr/lib/python3/dist-packages/pip",  "(python", "3.11)\n"]
     if version_split.len() >= 2 {
-        Some(version_split[1].to_string())
+        Ok(Some(version_split[1].to_string()))
     } else {
-        None
+        Ok(None)
     }
 }

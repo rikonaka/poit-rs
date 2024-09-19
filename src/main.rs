@@ -1,5 +1,10 @@
+use anyhow::Result;
 use clap::Parser;
-use serde::{Deserialize, Serialize};
+use env_logger;
+use log::error;
+use log::info;
+use serde::Deserialize;
+use serde::Serialize;
 use version_compare::Version;
 
 mod install;
@@ -15,7 +20,7 @@ const DEFAULT_SHA256_SUFFIX: &str = "sha256";
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// For packaging pip dependencies
+    /// Packaging pip dependencies
     #[arg(short, long, default_value = "null")]
     pack: String,
 
@@ -25,59 +30,74 @@ struct Args {
 
     /// Specify the version of the pip package
     #[arg(short, long, default_value = "null")]
-    ver: String,
+    version: String,
+
+    /// Verbose
+    #[arg(short, long, action)]
+    verbose: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SerdeConfig {
-    data: Vec<String>,
+    depends: Vec<String>,
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-    #[test]
-    fn append() {
-        let mut a = vec![0, 1, 2];
-        let mut b = vec![];
-        a.append(&mut b);
-        // println!("{:?}", a);
-        assert_eq!(a, vec![0, 1, 2]);
-    }
-}
-
-fn pip_version_check() -> (bool, String) {
-    let pip_version = utils::get_pip_version().unwrap();
-    let recommand_version = Version::from("21.2").unwrap();
-    let current_version = Version::from(&pip_version).unwrap();
-    if current_version > recommand_version {
-        (true, pip_version.to_string())
-    } else {
-        (false, pip_version.to_string())
+fn pip_version_check() -> Result<(bool, String)> {
+    match utils::get_pip_version()? {
+        Some(pip_version) => {
+            let recommand_version = Version::from("21.2").unwrap();
+            let current_version = Version::from(&pip_version).unwrap();
+            if current_version >= recommand_version {
+                Ok((true, pip_version.to_string()))
+            } else {
+                Ok((false, pip_version.to_string()))
+            }
+        }
+        None => Ok((false, String::new())),
     }
 }
 
 fn main() {
-    match pip_version_check() {
-        (true, _) => (),
-        (false, v) => {
-            panic!(
-                "please update the pip version (>=21.2), current version {}",
-                v
-            );
-        }
+    let args = Args::parse();
+    if args.verbose {
+        // env_logger::init();
+        let _ = env_logger::builder()
+            .filter_level(log::LevelFilter::Debug)
+            .is_test(true)
+            .try_init()
+            .unwrap();
+    } else {
+        let _ = env_logger::builder()
+            .filter_level(log::LevelFilter::Info)
+            .is_test(true)
+            .try_init()
+            .unwrap();
     }
 
-    let args = Args::parse();
+    match pip_version_check() {
+        Ok((flag, version)) => match flag {
+            true => (), // do nothing and go ahead
+            false => {
+                panic!(
+                    "please update the pip version (>=21.2), current version {}",
+                    version
+                );
+            }
+        },
+        Err(e) => panic!("get pip version failed: {e}"),
+    }
+
     if args.pack != "null" {
-        pack::pack_wheel(&args.pack, &args.ver);
+        match pack::pack_wheel(&args.pack, &args.version) {
+            Ok(_) => (),
+            Err(e) => error!("pack whl failed: {e}"),
+        }
     } else if args.install != "null" {
-        install::install_wheel(&args.install, &args.ver);
+        match install::install_wheel(&args.install, &args.version) {
+            Ok(_) => (),
+            Err(e) => error!("install whl failed: {e}"),
+        }
     } else {
-        println!("use --help for more infomation");
+        info!("use --help for more infomation");
     }
 }

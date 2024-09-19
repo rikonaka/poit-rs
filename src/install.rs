@@ -1,3 +1,7 @@
+use anyhow::Result;
+use log::debug;
+use log::error;
+use log::info;
 use sevenz_rust;
 use std::process::Command;
 
@@ -6,17 +10,17 @@ use crate::utils;
 use crate::DEFAULT_SHA256_SUFFIX;
 
 #[test]
-fn test_pip_command() {
+fn test_pip_command() -> Result<()> {
     let c = Command::new("pip")
         .arg("index")
         .arg("versions")
         .arg("pymysql")
-        .output()
-        .expect("failed to excute pip install");
-    println!("{}", String::from_utf8_lossy(&c.stdout));
+        .output()?;
+    debug!("{}", String::from_utf8_lossy(&c.stdout));
+    Ok(())
 }
 
-fn install_depends(package_name: &str, package_version: &str) {
+fn install_depends(package_name: &str, package_version: &str) -> Result<()> {
     let find_links_str = format!("--find-links=./{}_{}/", package_name, package_version);
     let package = format!("{}=={}", package_name, package_version);
     let c = Command::new("pip")
@@ -24,25 +28,24 @@ fn install_depends(package_name: &str, package_version: &str) {
         .arg("--no-index")
         .arg(find_links_str)
         .arg(package)
-        .output()
-        .expect("failed to excute pip install");
+        .output()?;
 
-    println!("{}", String::from_utf8_lossy(&c.stdout));
+    debug!("{}", String::from_utf8_lossy(&c.stdout));
+    Ok(())
 }
 
-pub fn install_wheel(poitfile_name: &str, package_version: &str) {
-    // poitfile_name: vim.poit
-
+pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
     // sha256 check
-    println!("Checking...");
+    info!("checking...");
     let hash_filename = format!("{}.{}", poitfile_name, DEFAULT_SHA256_SUFFIX);
-    let hash_str = utils::file_sha256(poitfile_name).unwrap();
-    let contents = utils::read_file_bytes(&hash_filename).unwrap();
+    let hash_str = utils::file_sha256(poitfile_name)?;
+    let contents = utils::read_file_bytes(&hash_filename)?;
     let contents = String::from_utf8_lossy(&contents).to_string();
     if hash_str.trim() != contents.trim() {
+        error!("calc hash: {hash_str}, file hash: {contents}");
         panic!("check sha256 failed");
     } else {
-        println!("Check sha256 success...");
+        info!("check sha256 success...");
     }
 
     // get target dir name
@@ -61,32 +64,29 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) {
             if poit_split_2.len() == 2 {
                 (poit_split_2[0], poit_split_2[1])
             } else {
-                panic!("please check your poit file");
+                panic!("please check your poit file!");
             }
         } else {
-            panic!("please check your poit file");
+            panic!("please check your poit file!");
         }
     } else {
         (poitfile_name, package_version)
     };
 
     // decompress 7z package
-    println!("Decompress poit...");
+    info!("decompress poit...");
     // let dest = format!("./{}", target_dir);
-    utils::create_dir(&target_dir);
-    sevenz_rust::decompress_file(poitfile_name, &target_dir).expect("complete");
-
-    // let target_config = format!("{}/{}", target_dir, DEFAULT_CONFIG_NAME);
-    // let serde_config = utils::serde_from_file(&target_config).unwrap();
-    // let _ = serde_config.data;
+    utils::create_dir(&target_dir)?;
+    sevenz_rust::decompress_file(poitfile_name, &target_dir)?;
 
     // install all
-    // println!("{}, {}", package_name, package_version);
-    install_depends(package_name, package_version);
+    info!("installing {package_name}[{package_version}]");
+    install_depends(package_name, package_version)?;
 
     // delete decompress dir
-    println!("Removing tmp dir...");
-    utils::remove_dir(&target_dir);
+    info!("removing tmp dir...");
+    utils::remove_dir(&target_dir)?;
+    info!("done!");
 
-    println!("Done");
+    Ok(())
 }
