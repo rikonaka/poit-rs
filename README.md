@@ -31,7 +31,7 @@ Start packing.
 root@debian:~/test# ./poit --pack ipython
 ```
 
-Or package a version of the software.
+Or package a specific version of the software.
 
 ```bash
 root@debian:~/test# ./poit --pack ipython --package-version 8.26.0
