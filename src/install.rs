@@ -6,19 +6,7 @@ use sevenz_rust;
 use std::process::Command;
 
 use crate::utils;
-// use crate::DEFAULT_CONFIG_NAME;
 use crate::DEFAULT_SHA256_SUFFIX;
-
-#[test]
-fn test_pip_command() -> Result<()> {
-    let c = Command::new("pip")
-        .arg("index")
-        .arg("versions")
-        .arg("pymysql")
-        .output()?;
-    debug!("{}", String::from_utf8_lossy(&c.stdout));
-    Ok(())
-}
 
 fn install_depends(package_name: &str, package_version: &str) -> Result<()> {
     let find_links_str = format!("--find-links=./{}_{}/", package_name, package_version);
