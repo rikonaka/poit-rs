@@ -76,9 +76,9 @@ pub fn pack_wheel(package_name: &str, package_version: &str) -> Result<()> {
     }
 
     match utils::create_dir(package_name) {
-        Ok(_) => info!("create tmp dir success"),
+        Ok(_) => info!("create tmp dir success!"),
         Err(e) => {
-            error!("create tmp dir failed");
+            error!("create tmp dir failed!");
             return Err(e.into());
         }
     }

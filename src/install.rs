@@ -31,7 +31,7 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
     let contents = String::from_utf8_lossy(&contents).to_string();
     if hash_str.trim() != contents.trim() {
         error!("calc hash: {hash_str}, file hash: {contents}");
-        panic!("check sha256 failed");
+        panic!("check sha256 failed!");
     } else {
         info!("check sha256 success...");
     }
@@ -41,7 +41,7 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
     let target_dir = if poitfile_name_split.len() > 0 {
         poitfile_name_split[0].to_string()
     } else {
-        panic!("filename error, standard files should end with poit");
+        panic!("filename error, standard files should end with poit!");
     };
 
     // get package version
