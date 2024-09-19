@@ -34,7 +34,7 @@ root@debian:~/test# ./poit --pack ipython
 Or package a version of the software.
 
 ```bash
-root@debian:~/test# ./poit --pack ipython --ver 8.13.2
+root@debian:~/test# ./poit --pack ipython --version 8.13.2
 ```
 
 These three files will appear in the directory.
