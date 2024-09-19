@@ -50,6 +50,13 @@ pub fn write_to_file(filename: &str, contents: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn read_file_str(path: &str) -> Result<String> {
+    let mut file = File::open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    Ok(contents)
+}
+
 pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> Result<()> {
     let serialized = match serde_json::to_string(&serde_config) {
         Ok(s) => s,
@@ -58,16 +65,11 @@ pub fn serde_to_file(filename: &str, serde_config: SerdeConfig) -> Result<()> {
     write_to_file(filename, &serialized)
 }
 
-// pub fn serde_from_file(filename: &str) -> Option<SerdeConfig> {
-//     let contents = read_file_str(filename).unwrap();
-//     match serde_json::from_str(&contents) {
-//         Ok(s) => Some(s),
-//         Err(e) => {
-//             println!("serde from file {} failed: {}", filename, e);
-//             None
-//         }
-//     }
-// }
+pub fn serde_from_file(filename: &str) -> Result<SerdeConfig> {
+    let contents = read_file_str(filename)?;
+    let s = serde_json::from_str(&contents)?;
+    Ok(s)
+}
 
 pub fn get_pip_version() -> Result<Option<String>> {
     let c = Command::new("pip").arg("--version").output()?;

@@ -2,24 +2,52 @@ use anyhow::Result;
 use log::debug;
 use log::error;
 use log::info;
+use log::warn;
 use sevenz_rust;
 use std::process::Command;
+use version_compare::Version;
 
 use crate::utils;
+use crate::DEFAULT_CONFIG_NAME;
 use crate::DEFAULT_SHA256_SUFFIX;
 
 fn install_depends(package_name: &str, package_version: &str) -> Result<()> {
-    let find_links_str = format!("--find-links=./{}_{}/", package_name, package_version);
-    let package = format!("{}=={}", package_name, package_version);
-    let c = Command::new("pip")
-        .arg("install")
-        .arg("--no-index")
-        .arg(find_links_str)
-        .arg(package)
+    let find_links = format!("--find-links=./{package_name}/");
+    let package = if package_version != "null" {
+        format!("{}=={}", package_name, package_version)
+    } else {
+        package_name.to_string()
+    };
+    let mut command = Command::new("pip");
+    let command = command
+        .args(["install", "--no-index", &find_links, &package])
         .output()?;
-
-    debug!("{}", String::from_utf8_lossy(&c.stdout));
+    debug!(
+        "install output: {}",
+        String::from_utf8_lossy(&command.stdout)
+    );
     Ok(())
+}
+
+fn check_python_version(python_version: &str) -> Result<(bool, String)> {
+    let command = Command::new("python3").arg("--version").output()?;
+    let command_str = String::from_utf8_lossy(&command.stdout);
+    debug!("python version output: {}", command_str);
+    let command_str_split: Vec<&str> = command_str.split(" ").collect();
+    let command_python_version = command_str_split[1];
+
+    let python_version_split: Vec<&str> = python_version.split(".").collect();
+    let python_version = python_version_split[0..2].join(".");
+    let local_python_version_split: Vec<&str> = command_python_version.split(".").collect();
+    let local_python_version = local_python_version_split[0..2].join(".");
+    let l_version = Version::from(&python_version).unwrap();
+    let r_version = Version::from(&local_python_version).unwrap();
+
+    if l_version == r_version {
+        Ok((true, command_python_version.trim().to_string()))
+    } else {
+        Ok((false, command_python_version.trim().to_string()))
+    }
 }
 
 pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
@@ -37,28 +65,11 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
     }
 
     // get target dir name
-    let poitfile_name_split: Vec<&str> = poitfile_name.split(".poit").collect();
-    let target_dir = if poitfile_name_split.len() > 0 {
+    let poitfile_name_split: Vec<&str> = poitfile_name.split(".").collect();
+    let target_dir = if poitfile_name_split.len() >= 2 {
         poitfile_name_split[0].to_string()
     } else {
-        panic!("filename error, standard files should end with poit!");
-    };
-
-    // get package version
-    let (package_name, package_version) = if package_version == "null" {
-        let poit_split_1: Vec<&str> = poitfile_name.split(".poit").collect();
-        if poit_split_1.len() > 0 {
-            let poit_split_2: Vec<&str> = poit_split_1[0].split("_").collect();
-            if poit_split_2.len() == 2 {
-                (poit_split_2[0], poit_split_2[1])
-            } else {
-                panic!("please check your poit file!");
-            }
-        } else {
-            panic!("please check your poit file!");
-        }
-    } else {
-        (poitfile_name, package_version)
+        panic!("wrong file name, standard files should end with aoit");
     };
 
     // decompress 7z package
@@ -67,9 +78,19 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
     utils::create_dir(&target_dir)?;
     sevenz_rust::decompress_file(poitfile_name, &target_dir)?;
 
+    let config_file_path = format!("{}/{}", target_dir, DEFAULT_CONFIG_NAME);
+    let serde_config = utils::serde_from_file(&config_file_path)?;
+    match check_python_version(&serde_config.python_version)? {
+        (true, _) => (),
+        (false, local_version) => warn!(
+            "package python version not match, package version {}, local version {}",
+            serde_config.python_version, local_version
+        ),
+    }
+
     // install all
-    info!("installing {package_name}[{package_version}]");
-    install_depends(package_name, package_version)?;
+    info!("installing: {}", target_dir);
+    install_depends(&target_dir, package_version)?;
 
     // delete decompress dir
     info!("removing tmp dir...");

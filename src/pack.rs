@@ -1,5 +1,4 @@
 use anyhow::Result;
-use glob::glob;
 use log::debug;
 use log::error;
 use log::info;
@@ -15,45 +14,35 @@ use crate::DEFAULT_SHA256_SUFFIX;
 fn download_depends(
     package_name: &str,
     package_version: &str,
+    python_version: &str,
     target_dir: &str,
-) -> Result<Vec<String>> {
+) -> Result<()> {
     // package_name: python-telegram-bot
     // package_version: 20.3
-    let mut download_whl = Vec::new();
-    if package_version == "null" {
-        let command = Command::new("pip")
-            .arg("download")
-            .arg(package_name)
-            .output()?;
-        debug!(
-            "download output: {}",
-            String::from_utf8_lossy(&command.stdout)
-        );
+    let mut command = Command::new("pip");
+    let command = command.args(["download", "-d", target_dir]); // download to `target_dir`
+
+    let package_name = if package_version == "null" {
+        package_name.to_string()
     } else {
         let package_name_with_version = format!("{}=={}", package_name, package_version);
-        let command = Command::new("pip")
-            .arg("download")
-            .arg(package_name_with_version)
-            .output()?;
-        debug!(
-            "download output: {}",
-            String::from_utf8_lossy(&command.stdout)
-        );
-    }
+        package_name_with_version
+    };
+    debug!("package_name: {package_name}");
 
-    for entry in glob("*.whl").expect("failed to read glob pattern") {
-        match entry {
-            Ok(path) => {
-                // println!("{:?}", path.display());
-                let package_full_name = path.to_string_lossy().to_string();
-                debug!("move {package_full_name} to {target_dir}");
-                utils::move_file_to_dir(&target_dir, &package_full_name)?;
-                download_whl.push(package_full_name);
-            }
-            Err(e) => return Err(e.into()),
-        }
-    }
-    Ok(download_whl)
+    let command = if python_version == "null" {
+        command
+    } else {
+        command.args(["--python-version", python_version, "--only-binary=:all:"])
+    };
+
+    let command = command.arg(package_name).output()?;
+    debug!(
+        "download output: {}",
+        String::from_utf8_lossy(&command.stdout)
+    );
+
+    Ok(())
 }
 
 fn package_name_check(package_name: &str) -> bool {
@@ -69,7 +58,7 @@ fn package_name_check(package_name: &str) -> bool {
     }
 }
 
-pub fn pack_wheel(package_name: &str, package_version: &str) -> Result<()> {
+pub fn pack_wheel(package_name: &str, package_version: &str, python_version: &str) -> Result<()> {
     match package_name_check(package_name) {
         true => (),
         false => return Ok(()),
@@ -84,26 +73,20 @@ pub fn pack_wheel(package_name: &str, package_version: &str) -> Result<()> {
     }
 
     info!("downloading...");
-    let depends_all_vec = download_depends(package_name, package_version, package_name)?;
-    debug!("depends all: {:?}", depends_all_vec);
+    let target_dir = package_name;
+    download_depends(package_name, package_version, python_version, target_dir)?;
 
     // serde config
     let serde_config = SerdeConfig {
-        depends: depends_all_vec,
+        python_version: python_version.to_string(),
+        package_version: package_version.to_string(),
     };
     utils::serde_to_file(DEFAULT_CONFIG_NAME, serde_config)?;
     utils::move_file_to_dir(package_name, DEFAULT_CONFIG_NAME)?;
 
     // compress
     info!("saving...");
-    let dest = if package_version == "null" {
-        format!("{}.{}", package_name, DEFAULT_PACKAGE_SUFFIX)
-    } else {
-        format!(
-            "{}_{}.{}",
-            package_name, package_version, DEFAULT_PACKAGE_SUFFIX
-        )
-    };
+    let dest = format!("{}.{}", package_name, DEFAULT_PACKAGE_SUFFIX);
     sevenz_rust::compress_to_path(package_name, &dest)?;
 
     // sha256 hash

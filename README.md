@@ -7,8 +7,8 @@ Pip offline installation tool.
 ## Requirements
 
 - [x] Two servers, one can be networked called A, one **can not** be networked called B.
-- [x] A server with the same `architecture` and the same `distribution` as the B server, and with a good network.
-- [x] Same python version and `pip` is installed.
+- [x] A server with the same `architecture` as the B server, and with a good network.
+- [x] The `pip` is installed.
 - [x] Both servers must have sufficient hard disk space.
 
 ## Usage
@@ -35,6 +35,12 @@ Or package a version of the software.
 
 ```bash
 root@debian:~/test# ./poit --pack ipython --version 8.13.2
+```
+
+Or package with specific python version.
+
+```bash
+root@debian:~/test# ./poit --pack ipython --python 3.12
 ```
 
 These three files will appear in the directory.

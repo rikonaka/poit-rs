@@ -29,8 +29,12 @@ struct Args {
     install: String,
 
     /// Specify the version of the pip package
-    #[arg(short, long, default_value = "null")]
-    version: String,
+    #[arg(long, default_value = "null")]
+    package_version: String,
+
+    /// Specify the version of the python
+    #[arg(long, default_value = "null")]
+    python_version: String,
 
     /// Verbose
     #[arg(short, long, action)]
@@ -39,7 +43,8 @@ struct Args {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SerdeConfig {
-    depends: Vec<String>,
+    python_version: String,
+    package_version: String,
 }
 
 fn pip_version_check() -> Result<(bool, String)> {
@@ -88,12 +93,12 @@ fn main() {
     }
 
     if args.pack != "null" {
-        match pack::pack_wheel(&args.pack, &args.version) {
+        match pack::pack_wheel(&args.pack, &args.package_version, &args.python_version) {
             Ok(_) => (),
             Err(e) => error!("pack whl failed: {e}"),
         }
     } else if args.install != "null" {
-        match install::install_wheel(&args.install, &args.version) {
+        match install::install_wheel(&args.install, &args.package_version) {
             Ok(_) => (),
             Err(e) => error!("install whl failed: {e}"),
         }

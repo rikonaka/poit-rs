@@ -20,3 +20,8 @@ Pipfile
 Pipfile.lock
 
 *.7z
+.venv/
+*.whl
+*.poit
+*.sha256
+test/
