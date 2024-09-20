@@ -18,7 +18,7 @@ fn install_depends(package_name: &str, package_version: &str) -> Result<()> {
     } else {
         package_name.to_string()
     };
-    let mut command = Command::new("pip");
+    let mut command = Command::new("pip3");
     let command = command
         .args(["install", "--no-index", &find_links, &package])
         .output()?;
@@ -29,28 +29,44 @@ fn install_depends(package_name: &str, package_version: &str) -> Result<()> {
     Ok(())
 }
 
-fn check_python_version(python_version: &str) -> Result<(bool, String)> {
+fn python_version_check(python_version: &str) -> Result<(bool, String)> {
     let command = Command::new("python3").arg("--version").output()?;
     let command_str = String::from_utf8_lossy(&command.stdout);
     debug!("python version output: {}", command_str);
     let command_str_split: Vec<&str> = command_str.split(" ").collect();
-    let command_python_version = command_str_split[1];
 
-    let python_version_split: Vec<&str> = python_version.split(".").collect();
-    let python_version = python_version_split[0..2].join(".");
-    let local_python_version_split: Vec<&str> = command_python_version.split(".").collect();
-    let local_python_version = local_python_version_split[0..2].join(".");
-    let l_version = Version::from(&python_version).unwrap();
-    let r_version = Version::from(&local_python_version).unwrap();
+    if command_str_split.len() >= 2 {
+        let command_python_version = command_str_split[1];
+        let python_version_split: Vec<&str> = python_version.split(".").collect();
+        let local_python_version_split: Vec<&str> = command_python_version.split(".").collect();
+        if python_version_split.len() >= 3 && local_python_version_split.len() >= 3 {
+            let python_version = python_version_split[0..2].join(".");
+            let local_python_version = local_python_version_split[0..2].join(".");
+            let l_version = Version::from(&python_version).unwrap();
+            let r_version = Version::from(&local_python_version).unwrap();
 
-    if l_version == r_version {
-        Ok((true, command_python_version.trim().to_string()))
+            if l_version == r_version {
+                return Ok((true, command_python_version.trim().to_string()));
+            } else {
+                return Ok((false, command_python_version.trim().to_string()));
+            }
+        } else {
+            error!(
+                "unknown python version: {}, {}",
+                python_version, command_python_version
+            );
+        }
     } else {
-        Ok((false, command_python_version.trim().to_string()))
+        error!("unknown python version: {}", command_str);
     }
+    Ok((false, String::new()))
 }
 
-pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
+pub fn install_wheel(
+    poitfile_name: &str,
+    package_version: &str,
+    skip_python_version_check: &bool,
+) -> Result<()> {
     // sha256 check
     info!("checking...");
     let hash_filename = format!("{}.{}", poitfile_name, DEFAULT_SHA256_SUFFIX);
@@ -80,12 +96,15 @@ pub fn install_wheel(poitfile_name: &str, package_version: &str) -> Result<()> {
 
     let config_file_path = format!("{}/{}", target_dir, DEFAULT_CONFIG_NAME);
     let serde_config = utils::serde_from_file(&config_file_path)?;
-    match check_python_version(&serde_config.python_version)? {
-        (true, _) => (),
-        (false, local_version) => warn!(
-            "package python version not match, package version {}, local version {}",
-            serde_config.python_version, local_version
-        ),
+
+    if !skip_python_version_check && serde_config.python_version != "null" {
+        match python_version_check(&serde_config.python_version)? {
+            (true, _) => (),
+            (false, local_version) => warn!(
+                "package python version not match, package version {}, local version {}",
+                serde_config.python_version, local_version
+            ),
+        }
     }
 
     // install all

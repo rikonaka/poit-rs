@@ -19,7 +19,7 @@ fn download_depends(
 ) -> Result<()> {
     // package_name: python-telegram-bot
     // package_version: 20.3
-    let mut command = Command::new("pip");
+    let mut command = Command::new("pip3");
     let command = command.args(["download", "-d", target_dir]); // download to `target_dir`
 
     let package_name = if package_version == "null" {

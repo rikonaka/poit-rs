@@ -36,6 +36,10 @@ struct Args {
     #[arg(long, default_value = "null")]
     python_version: String,
 
+    /// Skip the python version check
+    #[arg(short, long, action)]
+    skip_python_version_check: bool,
+
     /// Verbose
     #[arg(short, long, action)]
     verbose: bool,
@@ -98,7 +102,11 @@ fn main() {
             Err(e) => error!("pack whl failed: {e}"),
         }
     } else if args.install != "null" {
-        match install::install_wheel(&args.install, &args.package_version) {
+        match install::install_wheel(
+            &args.install,
+            &args.package_version,
+            &args.skip_python_version_check,
+        ) {
             Ok(_) => (),
             Err(e) => error!("install whl failed: {e}"),
         }

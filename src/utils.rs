@@ -72,7 +72,7 @@ pub fn serde_from_file(filename: &str) -> Result<SerdeConfig> {
 }
 
 pub fn get_pip_version() -> Result<Option<String>> {
-    let c = Command::new("pip").arg("--version").output()?;
+    let c = Command::new("pip3").arg("--version").output()?;
     let version_str = String::from_utf8_lossy(&c.stdout);
     let version_split: Vec<&str> = version_str.split(" ").collect();
     // ["pip", "23.0.1", "from", "/usr/lib/python3/dist-packages/pip",  "(python", "3.11)\n"]
